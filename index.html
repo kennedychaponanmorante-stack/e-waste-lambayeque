@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>E-Waste Lambayeque | Sistema Integral v2.0</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        :root { 
+            --azul-oscuro: #1a237e; 
+            --azul-principal: #0d47a1; 
+            --naranja-eco: #ff9800; 
+            --fondo: #f0f4f8; 
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: var(--fondo); color: #333; }
+        
+        nav { 
+            background: var(--azul-oscuro); 
+            padding: 15px; 
+            display: flex; 
+            justify-content: center; 
+            gap: 25px; 
+            position: sticky; 
+            top: 0; 
+            z-index: 1000; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        nav a { color: white; text-decoration: none; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        nav a:hover { color: #bbdefb; }
+
+        .pantalla { display: none; padding: 25px; max-width: 1100px; margin: 0 auto; animation: slideUp 0.4s ease-out; }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .seccion-blanca { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        #map { height: 480px; width: 100%; border-radius: 20px; border: 4px solid white; box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+        
+        .tarjeta { background: white; padding: 15px; margin-bottom: 10px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; border-left: 8px solid var(--azul-principal); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        
+        .btn-ruta { background: var(--naranja-eco); color: white !important; padding: 12px 20px; border-radius: 10px; text-decoration: none; font-weight: bold; border: none; cursor: pointer; transition: 0.3s; text-align: center; }
+        .btn-ruta:hover { transform: scale(1.05); background-color: #e68a00; }
+
+        .diccionario-item { display: flex; align-items: flex-start; gap: 20px; margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px solid #eee; }
+        .diccionario-item img { width: 80px; height: 80px; border-radius: 12px; object-fit: cover; background: #f0f0f0; }
+
+        input, textarea { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; }
+        .btn-enviar { background: var(--azul-principal); color: white; border: none; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; width: 100%; }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <a onclick="mostrarSeccion('inicio')">🏠 Inicio</a>
+        <a onclick="mostrarSeccion('mapa')">📍 Mapa RAEE</a>
+        <a onclick="mostrarSeccion('diccionario')">📚 Diccionario</a>
+        <a onclick="mostrarSeccion('opiniones')">💬 Opiniones</a>
+    </nav>
+
+    <section id="inicio" class="pantalla" style="display: block;">
+        <div class="seccion-blanca" style="text-align: center; padding: 60px;">
+            <h1 style="color: var(--azul-oscuro); font-size: 38px;">E-Waste Lambayeque</h1>
+            <p style="font-size: 18px; color: #666;">Plataforma tecnológica para la gestión de residuos electrónicos en la región.</p>
+            <img src="https://cdn-icons-png.flaticon.com/512/3299/3299935.png" width="120" style="margin: 20px 0;">
+            <br>
+            <button class="btn-ruta" onclick="mostrarSeccion('mapa')">BUSCAR PUNTOS DE RECICLAJE</button>
+        </div>
+    </section>
+
+    <section id="mapa" class="pantalla">
+        <div class="seccion-blanca">
+            <h2 style="color: var(--azul-oscuro); margin-top:0;">🗺️ Centros de Acopio Autorizados</h2>
+            <div style="margin-bottom: 15px;">
+                <strong>Filtrar por Distrito:</strong>
+                <select id="filtro-distrito" style="padding:8px; border-radius:8px;"><option value="todos">Todos los distritos</option></select>
+            </div>
+            <div id="map"></div>
+        </div>
+        <h3 style="color: var(--azul-oscuro); margin-left: 10px;">📋 Directorio de Locales</h3>
+        <div id="lista-items"></div>
+    </section>
+
+    <section id="diccionario" class="pantalla">
+        <div class="seccion-blanca">
+            <h2 style="color: var(--azul-oscuro);">📖 Glosario de Residuos (RAEE)</h2>
+            <p style="color: #666; margin-bottom: 30px;">Información detallada desde nuestra base de datos regional.</p>
+            <div id="contenedor-residuos">
+                <p style="text-align:center;">Cargando categorías...</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="opiniones" class="pantalla">
+        <div class="seccion-blanca">
+            <h2 style="color: var(--azul-oscuro);">💬 Tu opinión nos importa</h2>
+            <p>Ayúdanos a mejorar el sistema de reciclaje en Lambayeque.</p>
+            <input type="text" id="nombre-usuario" placeholder="Tu nombre">
+            <textarea id="mensaje-usuario" rows="4" placeholder="Escribe tu opinión aquí..."></textarea>
+            <button class="btn-enviar" onclick="enviarComentario()">PUBLICAR COMENTARIO</button>
+        </div>
+        <h3 style="color: var(--azul-oscuro);">Comentarios Recientes</h3>
+        <div id="contenedor-comentarios"></div>
+    </section>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script type="module">
+        import { supabase } from './supabaseClient.js'
+
+        const map = L.map('map').setView([-6.7714, -79.8409], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        const iconoEco = L.icon({
+            iconUrl: 'https://cdn-icons-png.flaticon.com/512/3299/3299935.png', 
+            iconSize: [45, 45], iconAnchor: [22, 45], popupAnchor: [0, -40]
+        });
+
+        let capaMarcadores = L.layerGroup().addTo(map);
+        let datosLocales = [];
+
+        // NAVEGACIÓN SPA
+        window.mostrarSeccion = (id) => {
+            document.querySelectorAll('.pantalla').forEach(s => s.style.display = 'none');
+            document.getElementById(id).style.display = 'block';
+            if(id === 'mapa') {
+                setTimeout(() => {
+                    map.invalidateSize(); 
+                    map.setView([-6.7714, -79.8409], 13);
+                }, 250); // SEGURO: Pequeño delay para que el mapa sepa cuánto mide
+            }
+            if(id === 'opiniones') cargarComentarios();
+            if(id === 'diccionario') cargarDiccionario();
+        };
+
+        // CARGAR PUNTOS DE RECICLAJE
+        async function cargarLocales() {
+            const { data } = await supabase.from('puntos_de_reciclaje').select('*');
+            if (data) {
+                datosLocales = data;
+                const sel = document.getElementById('filtro-distrito');
+                [...new Set(data.map(p => p.distrito))].sort().forEach(d => {
+                    const opt = document.createElement('option'); opt.value = d; opt.innerText = d; sel.appendChild(opt);
+                });
+                renderizarLocales(data);
+            }
+        }
+
+        function renderizarLocales(puntos) {
+            capaMarcadores.clearLayers();
+            const lista = document.getElementById('lista-items');
+            lista.innerHTML = "";
+            const bounds = [];
+
+            puntos.forEach(p => {
+                const url = `https://www.google.com/maps/dir/?api=1&destination=${p.latitud},${p.longitud}`;
+                const m = L.marker([p.latitud, p.longitud], {icon: iconoEco})
+                    .bindPopup(`<strong style="color:var(--azul-principal);">${p.Nombre}</strong><br><a class="btn-ruta" style="display:block;padding:5px;margin-top:8px;font-size:11px;" href="${url}" target="_blank">IR</a>`);
+                capaMarcadores.addLayer(m);
+                bounds.push([p.latitud, p.longitud]);
+
+                lista.innerHTML += `
+                    <div class="tarjeta">
+                        <div><strong style="color:var(--azul-oscuro);">${p.Nombre}</strong><br><small>${p.distrito}</small></div>
+                        <a class="btn-ruta" href="${url}" target="_blank">📍 CÓMO LLEGAR</a>
+                    </div>`;
+            });
+            if (bounds.length > 0) map.fitBounds(bounds);
+        }
+
+        // CARGAR DICCIONARIO DINÁMICO
+        async function cargarDiccionario() {
+            const { data } = await supabase.from('Diccionario_residuos').select('*');
+            const contenedor = document.getElementById('contenedor-residuos');
+            if (data && data.length > 0) {
+                contenedor.innerHTML = data.map(item => `
+                    <div class="diccionario-item">
+                        <img src="${item.imagen_URL || 'https://via.placeholder.com/80'}">
+                        <div>
+                            <h4 style="color: var(--azul-principal); margin: 0 0 5px 0;">${item.nombre_residuo}</h4>
+                            <p style="margin: 0 0 10px 0; font-size: 14px;">${item.descripcion}</p>
+                            <div style="background: #e3f2fd; padding: 10px; border-radius: 8px; font-size: 13px;">
+                                <strong>✅ ¿Qué hacer?:</strong> ${item.Que_hacer}
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                contenedor.innerHTML = "<p style='text-align:center;'>No se encontraron categorías en la base de datos.</p>";
+            }
+        }
+
+        // COMENTARIOS
+        window.enviarComentario = async () => {
+            const nombre = document.getElementById('nombre-usuario').value;
+            const mensaje = document.getElementById('mensaje-usuario').value;
+            if (!nombre || !mensaje) return alert("Completa los campos");
+            const { error } = await supabase.from('comentarios').insert([{ nombre, mensaje }]);
+            if (!error) {
+                document.getElementById('nombre-usuario').value = "";
+                document.getElementById('mensaje-usuario').value = "";
+                cargarComentarios();
+                alert("¡Opinión enviada!");
+            }
+        };
+
+        async function cargarComentarios() {
+            const { data } = await supabase.from('comentarios').select('*').order('fecha', { ascending: false });
+            const cont = document.getElementById('contenedor-comentarios');
+            cont.innerHTML = data ? data.map(c => `
+                <div style="background:white; padding:15px; border-radius:15px; margin-bottom:10px; border-left:5px solid var(--azul-principal);">
+                    <strong>${c.nombre}</strong> <small style="color:#999;">- ${new Date(c.fecha).toLocaleDateString()}</small>
+                    <p style="margin:5px 0 0 0;">${c.mensaje}</p>
+                </div>
+            `).join('') : '<p>Sin comentarios.</p>';
+        }
+
+        document.getElementById('filtro-distrito').addEventListener('change', (e) => {
+            const filt = e.target.value === "todos" ? datosLocales : datosLocales.filter(p => p.distrito === e.target.value);
+            renderizarLocales(filt);
+        });
+
+        // INICIO GLOBAL
+        cargarLocales();
+        cargarDiccionario(); // SEGURO: Carga el diccionario en segundo plano al abrir la web
+    </script>
+</body>
+</html>
+
+
+
+
+
