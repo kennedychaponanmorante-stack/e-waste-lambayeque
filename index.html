@@ -203,7 +203,7 @@ window.enviarComentario = async () => {
     try {
         // OPERACIÓN DE INSERCIÓN: Usando la instancia 'supabase' importada
         const { data, error } = await supabase
-            .from('comentarios') // Verifica que el nombre sea exacto en Supabase
+            .from('Comentarios') // Verifica que el nombre sea exacto en Supabase
             .insert([{ 
                 nombre: nombre, 
                 mensaje: mensaje,
