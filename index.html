@@ -227,7 +227,7 @@ window.enviarComentario = async () => {
 };
 
         async function cargarComentarios() {
-            const { data } = await supabase.from('comentarios').select('*').order('fecha', { ascending: false });
+            const { data } = await supabase.from('Comentarios').select('*').order('fecha', { ascending: false });
             const cont = document.getElementById('contenedor-comentarios');
             cont.innerHTML = data ? data.map(c => `
                 <div style="background:white; padding:15px; border-radius:15px; margin-bottom:10px; border-left:5px solid var(--azul-principal);">
