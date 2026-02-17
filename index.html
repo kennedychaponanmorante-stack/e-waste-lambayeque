@@ -185,18 +185,46 @@
         }
 
         // COMENTARIOS
-        window.enviarComentario = async () => {
-            const nombre = document.getElementById('nombre-usuario').value;
-            const mensaje = document.getElementById('mensaje-usuario').value;
-            if (!nombre || !mensaje) return alert("Completa los campos");
-            const { error } = await supabase.from('comentarios').insert([{ nombre, mensaje }]);
-            if (!error) {
-                document.getElementById('nombre-usuario').value = "";
-                document.getElementById('mensaje-usuario').value = "";
-                cargarComentarios();
-                alert("¡Opinión enviada!");
-            }
-        };
+        // EXPOSICIÓN GLOBAL: Necesaria porque usas type="module"
+window.enviarComentario = async () => {
+    // Referencias a los elementos del DOM
+    const nombreInput = document.getElementById('nombre-usuario');
+    const mensajeInput = document.getElementById('mensaje-usuario');
+    
+    // Extracción y limpieza de valores
+    const nombre = nombreInput.value.trim();
+    const mensaje = mensajeInput.value.trim();
+
+    // Validación de seguridad básica
+    if (!nombre || !mensaje) {
+        return alert("⚠️ Por favor, completa todos los campos.");
+    }
+
+    try {
+        // OPERACIÓN DE INSERCIÓN: Usando la instancia 'supabase' importada
+        const { data, error } = await supabase
+            .from('comentarios') // Verifica que el nombre sea exacto en Supabase
+            .insert([{ 
+                nombre: nombre, 
+                mensaje: mensaje,
+                fecha: new Date().toISOString() 
+            }]);
+
+        if (error) throw error;
+
+        // Feedback de éxito y limpieza
+        alert("✅ ¡Opinión enviada con éxito!");
+        nombreInput.value = "";
+        mensajeInput.value = "";
+        
+        // Refrescar la lista de comentarios sin recargar la página
+        await cargarComentarios();
+
+    } catch (err) {
+        console.error("Error técnico detectado:", err.message);
+        alert("❌ Error al conectar con Supabase: " + err.message);
+    }
+};
 
         async function cargarComentarios() {
             const { data } = await supabase.from('comentarios').select('*').order('fecha', { ascending: false });
@@ -220,6 +248,8 @@
     </script>
 </body>
 </html>
+
+
 
 
 
